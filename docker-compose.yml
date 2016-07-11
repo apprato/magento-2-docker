@@ -1,0 +1,45 @@
+version: '2'
+services:
+  mariadb:
+    image: mariadb:10.1.13
+    ports:
+      - 8001:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=magento2
+      - MYSQL_DATABASE=magento2
+      - MYSQL_USER=magento2
+      - MYSQL_PASSWORD=magento2
+
+  php:
+    user: www-data
+    build: build/php
+    links:
+      - mariadb
+    expose:
+      - 9000
+    links:
+     - mariadb
+    volumes:
+      - ./www:/var/www/html/magento2.dev
+      - ./build/php/install.sh:/var/www/html/magento2.dev/bin/install.sh
+      - ./build/php/php.ini:/usr/local/etc/php/php.ini\
+
+  nginx:
+    image: nginx:latest
+    build: build/nginx    
+    links:
+      - php
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./build/nginx/sites-enabled/magento2.conf:/etc/nginx/conf.d/magento2.conf
+      - ./www:/var/www/html/magento2.dev
+      - ./build/nginx/env.php:/var/www/html/magento2.dev/app/etc/env.php
+
+  redis:
+    image: redis
+    expose:
+      - 6379
+    ports:
+      - 6379:6379
